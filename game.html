@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Puzzle Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0e6ff;
+        }
+        .game-container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(128, 0, 128, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        h1 {
+            color: #6a0dad;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #8e44ad;
+            margin-top: 0;
+        }
+        .emoji-display {
+            font-size: 60px;
+            margin: 30px 0;
+            min-height: 70px;
+            background-color: #f8f0ff;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        button {
+            font-size: 16px;
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #6a0dad;
+        }
+        #answer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #6a0dad;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Emoji Puzzle Game</h1>
+        <h2 id="category"></h2>
+        <div id="emoji-display" class="emoji-display"></div>
+        <button onclick="nextPuzzle()">Next Puzzle</button>
+        <button onclick="showAnswer()">Show Answer</button>
+        <button onclick="restartGame()" id="restartButton" style="display: none;">Restart Game</button>
+        <p id="answer"></p>
+    </div>
+
+    <script>
+        const emojiPuzzles = {
+            "Movies": [
+                { emojis: "🧙‍♂️👓⚡", answer: "Harry Potter" },
+                { emojis: "🦁👑🌴", answer: "The Lion King" },
+                { emojis: "👻👻🚗", answer: "Ghostbusters" },
+                { emojis: "🌊🚢💏", answer: "Titanic" },
+                { emojis: "🦖🏞️🚙", answer: "Jurassic Park" },
+                { emojis: "👨‍💻💊🕴️", answer: "The Matrix" },
+                { emojis: "🕷️🕸️👨", answer: "Spider-Man" },
+                { emojis: "🤖💙🌎", answer: "WALL-E" }
+            ],
+            "Countries": [
+                { emojis: "🗽🦅🍔", answer: "United States" },
+                { emojis: "🍣⛩️🗻", answer: "Japan" },
+                { emojis: "🥖🗼🍷", answer: "France" },
+                { emojis: "🍝🏛️🍕", answer: "Italy" },
+                { emojis: "🦘🏉🦈", answer: "Australia" },
+                { emojis: "☕🌷🚲", answer: "Netherlands" },
+                { emojis: "🥘💃🐂", answer: "Spain" },
+                { emojis: "🍺🥨🚗", answer: "Germany" }
+            ],
+            "Famous People": [
+                { emojis: "🎭✍️📜", answer: "William Shakespeare" },
+                { emojis: "👨‍🔬💡🧠", answer: "Albert Einstein" },
+                { emojis: "🎨🖌️👂", answer: "Vincent van Gogh" },
+                { emojis: "🏀23🐐", answer: "Michael Jordan" },
+                { emojis: "🏋️‍♀️🥊🏆", answer: "Muhammad Ali" },
+                { emojis: "🎵🕺🌙", answer: "Michael Jackson" },
+                { emojis: "👩‍🔬☢️🇵🇱", answer: "Marie Curie" },
+                { emojis: "🍎💻📱", answer: "Steve Jobs" }
+            ],
+            "Brands": [
+                { emojis: "☕🧜‍♀️👑", answer: "Starbucks" },
+                { emojis: "🍔🍟🤡", answer: "McDonald's" },
+                { emojis: "👟✔️", answer: "Nike" },
+                { emojis: "🚗⚡🔋", answer: "Tesla" },
+                { emojis: "🎮🕹️🎧", answer: "PlayStation" },
+                { emojis: "📱🖥️🍎", answer: "Apple" },
+                { emojis: "📦🛒🌎", answer: "Amazon" },
+                { emojis: "👗👜👠", answer: "Gucci" }
+            ],
+            "Cities": [
+                { emojis: "🗽🏙️🍎", answer: "New York" },
+                { emojis: "🗼🥐🎨", answer: "Paris" },
+                { emojis: "🎭☕🚲", answer: "Amsterdam" },
+                { emojis: "⛩️🍣🏯", answer: "Tokyo" },
+                { emojis: "🏛️🍝🛵", answer: "Rome" },
+                { emojis: "🌉🌁🌈", answer: "San Francisco" },
+                { emojis: "🐼🍜🧧", answer: "Beijing" },
+                { emojis: "☕🌧️🎡", answer: "London" }
+            ]
+        };
+
+        let currentCategory;
+        let currentPuzzle;
+        let usedPuzzles = new Set();
+
+        function nextPuzzle() {
+            const categories = Object.keys(emojiPuzzles);
+            const totalPuzzles = categories.reduce((sum, category) => sum + emojiPuzzles[category].length, 0);
+
+            if (usedPuzzles.size >= totalPuzzles) {
+                gameOver();
+                return;
+            }
+
+            let puzzleFound = false;
+            while (!puzzleFound) {
+                currentCategory = categories[Math.floor(Math.random() * categories.length)];
+                const puzzles = emojiPuzzles[currentCategory];
+                const randomIndex = Math.floor(Math.random() * puzzles.length);
+                const potentialPuzzle = puzzles[randomIndex];
+                
+                const puzzleId = `${currentCategory}-${randomIndex}`;
+                if (!usedPuzzles.has(puzzleId)) {
+                    currentPuzzle = potentialPuzzle;
+                    usedPuzzles.add(puzzleId);
+                    puzzleFound = true;
+                }
+            }
+            
+            document.getElementById('category').textContent = currentCategory;
+            document.getElementById('emoji-display').textContent = currentPuzzle.emojis;
+            document.getElementById('answer').textContent = '';
+        }
+
+        function showAnswer() {
+            document.getElementById('answer').textContent = currentPuzzle.answer;
+        }
+
+        function gameOver() {
+            document.getElementById('category').textContent = 'Game Over';
+            document.getElementById('emoji-display').textContent = '🎉';
+            document.getElementById('answer').textContent = 'You\'ve completed all puzzles!';
+            document.querySelector('button[onclick="nextPuzzle()"]').disabled = true;
+            document.querySelector('button[onclick="showAnswer()"]').disabled = true;
+            document.getElementById('restartButton').style.display = 'inline-block';
+        }
+
+        function restartGame() {
+            usedPuzzles.clear();
+            document.querySelector('button[onclick="nextPuzzle()"]').disabled = false;
+            document.querySelector('button[onclick="showAnswer()"]').disabled = false;
+            document.getElementById('restartButton').style.display = 'none';
+            nextPuzzle();
+        }
+
+        // Initialize the game
+        nextPuzzle();
+    </script>
+</body>
+</html>
